@@ -13,6 +13,12 @@
     text-align: center;
     font-weight: bold;
   }
+  .default:after {
+    content: "(default value)";
+    display: inline-block;
+    margin-left: 1.5em;
+    opacity: 0.5;
+  }
 </style>
 <main id="output">
 </main>
@@ -75,7 +81,7 @@ async function main() {
       <p>
         ${comment}
       </p>
-      <pre>-s ${flagName} = ${defaultValue}</pre>
+      <pre class="default">-s ${flagName} = ${defaultValue}</pre>
       <ul class="flaglist">
         <li>${isCompileTime ? "✅" : "❌"} Compile time 
         <li>${isLinkTime ? "✅" : "❌"} Link time 
