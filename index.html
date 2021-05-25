@@ -31,6 +31,14 @@
   .source {
     font-size: 0.5em;
   }
+  .anchor:before {
+    content: "#";
+    margin-left: -1ch;
+    opacity: 0;
+  }
+  .anchor:hover:before {
+    opacity: 1;
+  }
 </style>
 <main id="output"></main>
 <footer>
@@ -146,7 +154,7 @@
         <section>
         <h1 id="${flagName}">
           <code
-            ><a href="#${flagName}">${flagName}</a
+            ><a href="#${flagName}" class="anchor">${flagName}</a
             ></code
           >
           <span class="source">
