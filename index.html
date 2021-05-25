@@ -1,4 +1,4 @@
-<!doctype html>
+<!DOCTYPE html>
 <style>
   body {
     max-width: 70ch;
@@ -23,79 +23,114 @@
     color: blue;
   }
 </style>
-<main id="output">
-</main>
+<main id="output"></main>
 <footer>
-  Built with 🤬 by <a href="https://twitter.com/dassurma" rel="noopener noreferrer">Surma</a>.
+  Built with 🤬 by
+  <a href="https://twitter.com/dassurma" rel="noopener noreferrer">Surma</a>.
 </footer>
 <script type="module">
-const html = String.raw;
-const COMMENT = /\s*\/\/\s?/g
-const RAW_SETTINGSJS_URL = "https://raw.githubusercontent.com/emscripten-core/emscripten/main/src/settings.js";
-const SETTINGSJS_VIEW_URL = "https://github.com/emscripten-core/emscripten/blob/main/src/settings.js"
-function parseBlock(block) {
-  const firstLine = block[0].lineNumber;
-  const lastLine = block.slice(-1)[0].lineNumber;
-  block = block.map(({line}) => line);
-  let firstNonComment = block.findIndex(line => !new RegExp(COMMENT).test(line));
-  if(firstNonComment === -1) {
-    firstNonComment = block.length;
-  }
-  const comment = block.slice(0, firstNonComment);
-  const hasFlags = /\[[^\]]+\]/.test(comment.slice(-1)[0]);
-  const isLinkTime = comment.slice(-1)[0].includes("link");
-  const isCompileTime = comment.slice(-1)[0].includes("compile");
-  const code = block.slice(firstNonComment);
-  let flagName, defaultValue;
-  if(code.length > 0) {
-    let value;
-    [,flagName, value] = /^\s*var\s*([^\s]+)\s*=(.+)$/.exec(code[0]);
-    defaultValue = [value, ...code.slice(1)].join("\n").replace(/;$/, "").trim();
-  }
-  return {
-    comment: comment.slice(0, hasFlags ? -1 : comment.length).map(line => line.replaceAll(COMMENT, "")).join(" "), 
-    flagName, defaultValue, isLinkTime, isCompileTime, firstLine, lastLine};
-}
-async function main() {
-  const text = await fetch(RAW_SETTINGSJS_URL).then(r => r.text());
-  const lines = text.split("\n")
-  const blocks = [];
-  let currentBlock = [];
-  function emitBlock() {
-    if(currentBlock.length > 0) {
-      blocks.push(currentBlock);  
+  const html = String.raw;
+  const COMMENT = /\s*\/\/\s?/g;
+  const RAW_SETTINGSJS_URL =
+    "https://raw.githubusercontent.com/emscripten-core/emscripten/main/src/settings.js";
+  const SETTINGSJS_VIEW_URL =
+    "https://github.com/emscripten-core/emscripten/blob/main/src/settings.js";
+  function parseBlock(block) {
+    const firstLine = block[0].lineNumber;
+    const lastLine = block.slice(-1)[0].lineNumber;
+    block = block.map(({ line }) => line);
+    let firstNonComment = block.findIndex(
+      (line) => !new RegExp(COMMENT).test(line)
+    );
+    if (firstNonComment === -1) {
+      firstNonComment = block.length;
     }
-    currentBlock = [];
+    const comment = block.slice(0, firstNonComment);
+    const hasFlags = /\[[^\]]+\]/.test(comment.slice(-1)[0]);
+    const isLinkTime = comment.slice(-1)[0].includes("link");
+    const isCompileTime = comment.slice(-1)[0].includes("compile");
+    const code = block.slice(firstNonComment);
+    let flagName, defaultValue;
+    if (code.length > 0) {
+      let value;
+      [, flagName, value] = /^\s*var\s*([^\s]+)\s*=(.+)$/.exec(code[0]);
+      defaultValue = [value, ...code.slice(1)]
+        .join("\n")
+        .replace(/;$/, "")
+        .trim();
+    }
+    return {
+      comment: comment
+        .slice(0, hasFlags ? -1 : comment.length)
+        .map((line) => line.replaceAll(COMMENT, ""))
+        .join(" "),
+      flagName,
+      defaultValue,
+      isLinkTime,
+      isCompileTime,
+      firstLine,
+      lastLine,
+      hasFlags,
+    };
   }
+  async function main() {
+    const text = await fetch(RAW_SETTINGSJS_URL).then((r) => r.text());
+    const lines = text.split("\n");
+    const blocks = [];
+    let currentBlock = [];
+    function emitBlock() {
+      if (currentBlock.length > 0) {
+        blocks.push(currentBlock);
+      }
+      currentBlock = [];
+    }
 
-  lines.forEach((line, lineNumber) => {
-    if(line.trim() === "") {
-      emitBlock();
-      return;
-    }
-    currentBlock.push({line, lineNumber});
-  })
-  emitBlock();  
+    lines.forEach((line, lineNumber) => {
+      if (line.trim() === "") {
+        emitBlock();
+        return;
+      }
+      currentBlock.push({ line, lineNumber });
+    });
+    emitBlock();
 
-  const dom = [];
-  for(const block of blocks) {
-    const {comment, firstLine, lastLine, flagName, defaultValue, isLinkTime, isCompileTime} = parseBlock(block);
-    if(!flagName) {
-      continue;
+    const dom = [];
+    for (const block of blocks) {
+      const {
+        comment,
+        firstLine,
+        hasFlags,
+        lastLine,
+        flagName,
+        defaultValue,
+        isLinkTime,
+        isCompileTime,
+      } = parseBlock(block);
+      if (!flagName) {
+        continue;
+      }
+      dom.push(html`
+        <h1>
+          <code
+            ><a
+              href="${SETTINGSJS_VIEW_URL}#L${firstLine + 1}-L${lastLine + 1}"
+              rel="noopener noreferrer"
+              target="_blank"
+              >${flagName}</a
+            ></code
+          >
+        </h1>
+        <p>${comment}</p>
+        <pre class="default">-s ${flagName} = ${defaultValue}</pre>
+        ${hasFlags
+          ? html`<ul class="flaglist">
+              <li>${isCompileTime ? "✅" : "❌"} Compile time</li>
+              <li>${isLinkTime ? "✅" : "❌"} Link time</li>
+            </ul>`
+          : ``}
+      `);
     }
-    dom.push(html`
-      <h1><code><a href="${SETTINGSJS_VIEW_URL}#L${firstLine+1}-L${lastLine+1}" rel="noopener noreferrer" target="_blank">${flagName}</a></code></h1>
-      <p>
-        ${comment}
-      </p>
-      <pre class="default">-s ${flagName} = ${defaultValue}</pre>
-      <ul class="flaglist">
-        <li>${isCompileTime ? "✅" : "❌"} Compile time 
-        <li>${isLinkTime ? "✅" : "❌"} Link time 
-      </ul>
-    `);
+    document.all.output.innerHTML = dom.join("");
   }
-  document.all.output.innerHTML = dom.join("");
-}
-main();
+  main();
 </script>
