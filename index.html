@@ -38,6 +38,7 @@
     "https://raw.githubusercontent.com/emscripten-core/emscripten/main/src/settings.js";
   const SETTINGSJS_VIEW_URL =
     "https://github.com/emscripten-core/emscripten/blob/main/src/settings.js";
+
   function parseBlock(block) {
     const firstLine = block[0].lineNumber;
     const lastLine = block.slice(-1)[0].lineNumber;
@@ -76,6 +77,20 @@
       hasFlags
     };
   }
+
+  function scrollToAnchor() {
+    let anchor = location.hash;
+    if (anchor.length <= 1) {
+      return;
+    }
+    anchor = anchor.slice(1);
+    const el = document.getElementById(anchor);
+    if (!el) {
+      return;
+    }
+    el.scrollIntoView();
+  }
+
   async function main() {
     const text = await fetch(RAW_SETTINGSJS_URL).then(r => r.text());
     const lines = text.split("\n");
@@ -140,6 +155,7 @@
       `);
     }
     document.all.output.innerHTML = dom.join("");
+    scrollToAnchor();
   }
   main();
 </script>
