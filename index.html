@@ -19,6 +19,9 @@
     margin-left: 1.5em;
     opacity: 0.5;
   }
+  :any-link {
+    color: blue;
+  }
 </style>
 <main id="output">
 </main>
@@ -28,8 +31,12 @@
 <script type="module">
 const html = String.raw;
 const COMMENT = /\s*\/\/\s?/g
-const SETTINGSJS_URL = "https://raw.githubusercontent.com/emscripten-core/emscripten/main/src/settings.js";
+const RAW_SETTINGSJS_URL = "https://raw.githubusercontent.com/emscripten-core/emscripten/main/src/settings.js";
+const SETTINGSJS_VIEW_URL = "https://github.com/emscripten-core/emscripten/blob/main/src/settings.js"
 function parseBlock(block) {
+  const firstLine = block[0].lineNumber;
+  const lastLine = block.slice(-1)[0].lineNumber;
+  block = block.map(({line}) => line);
   let firstNonComment = block.findIndex(line => !new RegExp(COMMENT).test(line));
   if(firstNonComment === -1) {
     firstNonComment = block.length;
@@ -47,10 +54,10 @@ function parseBlock(block) {
   }
   return {
     comment: comment.slice(0, hasFlags ? -1 : comment.length).map(line => line.replaceAll(COMMENT, "")).join(" "), 
-    flagName, defaultValue, isLinkTime, isCompileTime};
+    flagName, defaultValue, isLinkTime, isCompileTime, firstLine, lastLine};
 }
 async function main() {
-  const text = await fetch(SETTINGSJS_URL).then(r => r.text());
+  const text = await fetch(RAW_SETTINGSJS_URL).then(r => r.text());
   const lines = text.split("\n")
   const blocks = [];
   let currentBlock = [];
@@ -61,23 +68,23 @@ async function main() {
     currentBlock = [];
   }
 
-  for(const line of lines) {
+  lines.forEach((line, lineNumber) => {
     if(line.trim() === "") {
       emitBlock();
-      continue;
+      return;
     }
-    currentBlock.push(line);
-  }
+    currentBlock.push({line, lineNumber});
+  })
   emitBlock();  
 
   const dom = [];
   for(const block of blocks) {
-    const {comment, flagName, defaultValue, isLinkTime, isCompileTime} = parseBlock(block);
+    const {comment, firstLine, lastLine, flagName, defaultValue, isLinkTime, isCompileTime} = parseBlock(block);
     if(!flagName) {
       continue;
     }
     dom.push(html`
-      <h1><code>${flagName}</code></h1>
+      <h1><code><a href="${SETTINGSJS_VIEW_URL}#L${firstLine+1}-L${lastLine+1}" rel="noopener noreferrer" target="_blank">${flagName}</a></code></h1>
       <p>
         ${comment}
       </p>
