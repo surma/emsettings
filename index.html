@@ -1,0 +1,80 @@
+<!doctype html>
+<style>
+  body {
+    max-width: 70ch;
+    margin: 0 auto;
+    font-family: monospace;
+  }
+  .flaglist {
+    list-style: none;
+  }
+</style>
+<main id="output">
+</main>
+<script type="module">
+const html = String.raw;
+const COMMENT = /\s*\/\/\s?/g
+const SETTINGSJS_URL = "https://raw.githubusercontent.com/emscripten-core/emscripten/main/src/settings.js";
+function parseBlock(block) {
+  let firstNonComment = block.findIndex(line => !new RegExp(COMMENT).test(line));
+  if(firstNonComment === -1) {
+    firstNonComment = block.length;
+  }
+  const comment = block.slice(0, firstNonComment);
+  const hasFlags = /\[[^\]]+\]/.test(comment.slice(-1)[0]);
+  const isLinkTime = comment.slice(-1)[0].includes("link");
+  const isCompileTime = comment.slice(-1)[0].includes("compile");
+  const code = block.slice(firstNonComment);
+  let flagName, defaultValue;
+  if(code.length > 0) {
+    let value;
+    [,flagName, value] = /^\s*var\s*([^\s]+)\s*=(.+)$/.exec(code[0]);
+    defaultValue = [value, ...code.slice(1)].join("\n").replace(/;$/, "").trim();
+  }
+  return {
+    comment: comment.slice(0, hasFlags ? -1 : comment.length).map(line => line.replaceAll(COMMENT, "")).join(" "), 
+    flagName, defaultValue, isLinkTime, isCompileTime};
+}
+async function main() {
+  const text = await fetch(SETTINGSJS_URL).then(r => r.text());
+  const lines = text.split("\n")
+  const blocks = [];
+  let currentBlock = [];
+  function emitBlock() {
+    if(currentBlock.length > 0) {
+      blocks.push(currentBlock);  
+    }
+    currentBlock = [];
+  }
+
+  for(const line of lines) {
+    if(line.trim() === "") {
+      emitBlock();
+      continue;
+    }
+    currentBlock.push(line);
+  }
+  emitBlock();  
+
+  const dom = [];
+  for(const block of blocks) {
+    const {comment, flagName, defaultValue, isLinkTime, isCompileTime} = parseBlock(block);
+    if(!flagName) {
+      continue;
+    }
+    dom.push(html`
+      <h1><code>${flagName}</code></h1>
+      <p>
+        ${comment}
+      </p>
+      <pre>-s ${flagName} = ${defaultValue}</pre>
+      <ul class="flaglist">
+        <li>${isCompileTime ? "✅" : "❌"} Compile time 
+        <li>${isLinkTime ? "✅" : "❌"} Link time 
+      </ul>
+    `);
+  }
+  document.all.output.innerHTML = dom.join("");
+}
+main();
+</script>
