@@ -1,12 +1,18 @@
 <!DOCTYPE html>
 <style>
   body {
-    max-width: 70ch;
+    max-width: 90ch;
     margin: 0 auto;
     font-family: monospace;
   }
   .flaglist {
     list-style: none;
+  }
+  .doc {
+    margin-bottom: 3em;
+  }
+  section {
+    margin-bottom: 3em;
   }
   footer {
     margin-top: 2em;
@@ -67,7 +73,7 @@
       comment: comment
         .slice(0, hasFlags ? -1 : comment.length)
         .map(line => line.replaceAll(COMMENT, ""))
-        .join(" "),
+        .join("\n"),
       flagName,
       defaultValue,
       isLinkTime,
@@ -128,19 +134,20 @@
         continue;
       }
       dom.push(html`
+        <section>
         <h1 id="${flagName}">
           <code
             ><a href="#${flagName}">${flagName}</a
             ></code
           >
           <span class="source">
-<a
+            <a
               href="${SETTINGSJS_VIEW_URL}#L${firstLine + 1}-L${lastLine + 1}"
               rel="noopener noreferrer"
               target="_blank"
               >(source)</a>
         </h1>
-        <p>${comment}</p>
+        <pre class="doc">${comment}</pre>
         <pre class="default">-s ${flagName} = ${defaultValue}</pre>
         ${
           hasFlags
@@ -152,6 +159,7 @@
               `
             : ``
         }
+        </section>
       `);
     }
     document.all.output.innerHTML = dom.join("");
