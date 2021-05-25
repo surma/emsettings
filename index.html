@@ -1,15 +1,18 @@
 <!DOCTYPE html>
+<meta name="viewport" content="width=device-width, initial-scale=1" />
 <style>
   body {
     max-width: 90ch;
     margin: 0 auto;
     font-family: monospace;
+    padding: 10px;
   }
   .flaglist {
     list-style: none;
   }
   .doc {
     margin-bottom: 3em;
+    white-space: break-spaces;
   }
   section {
     margin-bottom: 3em;
@@ -171,7 +174,7 @@
               target="_blank"
               >(source)</a>
         </h1>
-        <pre class="doc">${comment}</pre>
+        <div class="doc">${comment}</div>
         <pre class="default">-s ${flagName} = ${defaultValue}</pre>
         ${
           hasFlags
