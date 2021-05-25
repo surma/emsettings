@@ -133,16 +133,14 @@
       if (!flagName) {
         continue;
       }
-      comment = comment.replace(/[A-Z_0-9]{5,}/, potentialFlagName => {
+      comment = comment.replace(/[A-Z_0-9]{5,}/g, potentialFlagName => {
         const isFlagName = parsedBlocks.some(
           ({ flagName }) => flagName === potentialFlagName
         );
         if (!isFlagName) {
           return potentialFlagName;
         }
-        return html`
-          <a href="#${potentialFlagName}">${potentialFlagName}</a>
-        `;
+        return `<a href="#${potentialFlagName}">${potentialFlagName}</a>`;
       });
       dom.push(html`
         <section>
