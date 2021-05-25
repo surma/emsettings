@@ -22,6 +22,9 @@
   :any-link {
     color: blue;
   }
+  .source {
+    font-size: 0.5em;
+  }
 </style>
 <main id="output"></main>
 <footer>
@@ -40,7 +43,7 @@
     const lastLine = block.slice(-1)[0].lineNumber;
     block = block.map(({ line }) => line);
     let firstNonComment = block.findIndex(
-      (line) => !new RegExp(COMMENT).test(line)
+      line => !new RegExp(COMMENT).test(line)
     );
     if (firstNonComment === -1) {
       firstNonComment = block.length;
@@ -62,7 +65,7 @@
     return {
       comment: comment
         .slice(0, hasFlags ? -1 : comment.length)
-        .map((line) => line.replaceAll(COMMENT, ""))
+        .map(line => line.replaceAll(COMMENT, ""))
         .join(" "),
       flagName,
       defaultValue,
@@ -70,11 +73,11 @@
       isCompileTime,
       firstLine,
       lastLine,
-      hasFlags,
+      hasFlags
     };
   }
   async function main() {
-    const text = await fetch(RAW_SETTINGSJS_URL).then((r) => r.text());
+    const text = await fetch(RAW_SETTINGSJS_URL).then(r => r.text());
     const lines = text.split("\n");
     const blocks = [];
     let currentBlock = [];
@@ -104,30 +107,36 @@
         flagName,
         defaultValue,
         isLinkTime,
-        isCompileTime,
+        isCompileTime
       } = parseBlock(block);
       if (!flagName) {
         continue;
       }
       dom.push(html`
-        <h1>
+        <h1 id="${flagName}">
           <code
-            ><a
+            ><a href="#${flagName}">${flagName}</a
+            ></code
+          >
+          <span class="source">
+<a
               href="${SETTINGSJS_VIEW_URL}#L${firstLine + 1}-L${lastLine + 1}"
               rel="noopener noreferrer"
               target="_blank"
-              >${flagName}</a
-            ></code
-          >
+              >(source)</a>
         </h1>
         <p>${comment}</p>
         <pre class="default">-s ${flagName} = ${defaultValue}</pre>
-        ${hasFlags
-          ? html`<ul class="flaglist">
-              <li>${isCompileTime ? "✅" : "❌"} Compile time</li>
-              <li>${isLinkTime ? "✅" : "❌"} Link time</li>
-            </ul>`
-          : ``}
+        ${
+          hasFlags
+            ? html`
+                <ul class="flaglist">
+                  <li>${isCompileTime ? "✅" : "❌"} Compile time</li>
+                  <li>${isLinkTime ? "✅" : "❌"} Link time</li>
+                </ul>
+              `
+            : ``
+        }
       `);
     }
     document.all.output.innerHTML = dom.join("");
