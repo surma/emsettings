@@ -119,20 +119,31 @@
     emitBlock();
 
     const dom = [];
-    for (const block of blocks) {
-      const {
-        comment,
-        firstLine,
-        hasFlags,
-        lastLine,
-        flagName,
-        defaultValue,
-        isLinkTime,
-        isCompileTime
-      } = parseBlock(block);
+    const parsedBlocks = blocks.map(block => parseBlock(block));
+    for (let {
+      comment,
+      firstLine,
+      hasFlags,
+      lastLine,
+      flagName,
+      defaultValue,
+      isLinkTime,
+      isCompileTime
+    } of parsedBlocks) {
       if (!flagName) {
         continue;
       }
+      comment = comment.replace(/[A-Z_0-9]{5,}/, potentialFlagName => {
+        const isFlagName = parsedBlocks.some(
+          ({ flagName }) => flagName === potentialFlagName
+        );
+        if (!isFlagName) {
+          return potentialFlagName;
+        }
+        return html`
+          <a href="#${potentialFlagName}">${potentialFlagName}</a>
+        `;
+      });
       dom.push(html`
         <section>
         <h1 id="${flagName}">
