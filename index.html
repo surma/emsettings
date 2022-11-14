@@ -63,6 +63,10 @@
   const SETTINGSJS_VIEW_URL =
     "https://github.com/emscripten-core/emscripten/blob/main/src/settings.js";
 
+  function linkify(text) {
+    return text.replaceAll(/https?:\/\/.*?(?=[^\w/]*(?:\s|$))/g, `<a href="$&" target="_blank">$&</a>`);
+  }
+
   function parseBlock(block) {
     const firstLine = block[0].lineNumber;
     const lastLine = block.slice(-1)[0].lineNumber;
@@ -91,8 +95,7 @@
       comment: comment
         .slice(0, hasFlags ? -1 : comment.length)
         .map(line => line.replace(COMMENT, ""))
-        .join("\n")
-        .replaceAll(/https?:\/\/\S+/g, `<a href="$&" target="_blank">$&</a>`),
+        .join("\n"),
       flagName,
       defaultValue,
       isLinkTime,
@@ -175,8 +178,8 @@
               target="_blank"
               >(source)</a>
         </h1>
-        <div class="doc">${comment}</div>
-        <pre class="default">-s ${flagName} = ${defaultValue}</pre>
+        <div class="doc">${linkify(comment)}</div>
+        <pre class="default">-s ${flagName} = ${linkify(defaultValue)}</pre>
         ${
           hasFlags
             ? html`
