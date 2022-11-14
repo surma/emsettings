@@ -57,7 +57,7 @@
 </footer>
 <script type="module">
   const html = String.raw;
-  const COMMENT = /\s*\/\/\s?/;
+  const COMMENT = /^\/\/\s?/;
   const RAW_SETTINGSJS_URL =
     "https://raw.githubusercontent.com/emscripten-core/emscripten/main/src/settings.js";
   const SETTINGSJS_VIEW_URL =
@@ -68,8 +68,6 @@
   }
 
   function parseBlock(block) {
-    const firstLine = block[0].lineNumber;
-    const lastLine = block.slice(-1)[0].lineNumber;
     block = block.map(({ line }) => line);
     let firstNonComment = block.findIndex(
       line => !new RegExp(COMMENT).test(line)
@@ -77,32 +75,42 @@
     if (firstNonComment === -1) {
       firstNonComment = block.length;
     }
-    const comment = block.slice(0, firstNonComment);
-    const hasFlags = /\[[^\]]+\]/.test(comment.slice(-1)[0]);
-    const isLinkTime = comment.slice(-1)[0].includes("link");
-    const isCompileTime = comment.slice(-1)[0].includes("compile");
-    const code = block.slice(firstNonComment);
-    let flagName, defaultValue;
-    if (code.length > 0) {
-      let value;
-      [, flagName, value] = /^\s*var\s*([^\s]+)\s*=(.+)$/.exec(code[0]);
-      defaultValue = [value, ...code.slice(1)]
-        .join("\n")
-        .replace(/;$/, "")
-        .trim();
+    const code = block.slice(firstNonComment).join("\n").trim();
+    if (code.length === 0) return;
+    const firstLine = block[0].lineNumber;
+    const lastLine = block.at(-1).lineNumber;
+    const comment = block.slice(0, firstNonComment).map(line => line.replace(COMMENT, ''));
+    const flags = {};
+    while (comment.length > 0) {
+      let parsedFlags = comment.at(-1).match(/^\[(.+?)\]/);
+      if (!parsedFlags) break;
+      for (let parsedFlag of parsedFlags[1].split('+')) {
+        flags[parsedFlag] = true;
+      }
+      comment.pop();
+    }
+    const [, flagName, defaultValue] = /^var\s+(\S+)\s*=\s*(.+?)\s*;?$/s.exec(code);
+    let {
+      general = false,
+      compile = general,
+      link = general,
+      experimental,
+      ...unknownFlags
+    } = flags;
+    unknownFlags = Object.keys(unknownFlags);
+    if (unknownFlags.length) {
+      console.warn(`${flagName} has unknown flags: ${unknownFlags.join(', ')}`);
     }
     return {
-      comment: comment
-        .slice(0, hasFlags ? -1 : comment.length)
-        .map(line => line.replace(COMMENT, ""))
-        .join("\n"),
+      comment: comment.join("\n"),
       flagName,
       defaultValue,
-      isLinkTime,
-      isCompileTime,
+      isLinkTime: link,
+      isCompileTime: compile,
+      isExperimental: experimental,
       firstLine,
       lastLine,
-      hasFlags
+      hasFlags: Object.keys(flags).length > 0,
     };
   }
 
@@ -141,7 +149,7 @@
     emitBlock();
 
     const dom = [];
-    const parsedBlocks = blocks.map(block => parseBlock(block));
+    const parsedBlocks = blocks.map(block => parseBlock(block)).filter(Boolean);
     for (let {
       comment,
       firstLine,
@@ -150,11 +158,9 @@
       flagName,
       defaultValue,
       isLinkTime,
-      isCompileTime
+      isCompileTime,
+      isExperimental,
     } of parsedBlocks) {
-      if (!flagName) {
-        continue;
-      }
       comment = comment.replace(/[A-Z_0-9]{5,}/g, potentialFlagName => {
         const isFlagName = parsedBlocks.some(
           ({ flagName }) => flagName === potentialFlagName
@@ -184,6 +190,7 @@
           hasFlags
             ? html`
                 <ul class="flaglist">
+                  ${isExperimental ? '<li>⚠️ This flag is experimental</li> ' : ''}
                   <li>${isCompileTime ? "✅" : "❌"} Compile time</li>
                   <li>${isLinkTime ? "✅" : "❌"} Link time</li>
                 </ul>
