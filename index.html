@@ -68,6 +68,8 @@
   }
 
   function parseBlock(block) {
+    const firstLine = block[0].lineNumber;
+    const lastLine = block.at(-1).lineNumber;
     block = block.map(({ line }) => line);
     let firstNonComment = block.findIndex(
       line => !new RegExp(COMMENT).test(line)
@@ -77,8 +79,6 @@
     }
     const code = block.slice(firstNonComment).join("\n").trim();
     if (code.length === 0) return;
-    const firstLine = block[0].lineNumber;
-    const lastLine = block.at(-1).lineNumber;
     const comment = block.slice(0, firstNonComment).map(line => line.replace(COMMENT, ''));
     const flags = {};
     while (comment.length > 0) {
