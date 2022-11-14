@@ -57,7 +57,7 @@
 </footer>
 <script type="module">
   const html = String.raw;
-  const COMMENT = /\s*\/\/\s?/g;
+  const COMMENT = /\s*\/\/\s?/;
   const RAW_SETTINGSJS_URL =
     "https://raw.githubusercontent.com/emscripten-core/emscripten/main/src/settings.js";
   const SETTINGSJS_VIEW_URL =
@@ -90,8 +90,9 @@
     return {
       comment: comment
         .slice(0, hasFlags ? -1 : comment.length)
-        .map(line => line.replaceAll(COMMENT, ""))
-        .join("\n"),
+        .map(line => line.replace(COMMENT, ""))
+        .join("\n")
+        .replaceAll(/https?:\/\/\S+/g, `<a href="$&" target="_blank">$&</a>`),
       flagName,
       defaultValue,
       isLinkTime,
