@@ -1,10 +1,14 @@
 <!DOCTYPE html>
 <meta name="viewport" content="width=device-width, initial-scale=1" />
 <style>
-  body {
+  html, body {
+    margin: 0;
+    padding: 0;
+    font-family: monospace;
+  }
+  #output {
     max-width: 90ch;
     margin: 0 auto;
-    font-family: monospace;
     padding: 10px;
   }
   .flaglist {
@@ -49,7 +53,19 @@
     padding: 0.5em 0;
     z-index: 2;
   }
+  .banner {
+    background: rgba(255, 0, 0, .4);
+    padding: 1em;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+  }
 </style>
+<header class="banner">
+<div>
+There now is an <a href="https://emscripten.org/docs/tools_reference/settings_reference.html">official Emscripten settings documentation</a> page!
+</div>
+</header>
 <main id="output"></main>
 <footer>
   Built with 🤬 by
@@ -206,3 +222,4 @@
   }
   main();
 </script>
+
